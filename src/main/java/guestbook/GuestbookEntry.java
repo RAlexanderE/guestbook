@@ -16,6 +16,7 @@
 package guestbook;
 
 import java.time.LocalDateTime;
+import java.util.regex.Pattern;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -34,8 +35,9 @@ import org.springframework.util.Assert;
 class GuestbookEntry {
 
 	private @Id @GeneratedValue Long id;
-	private final String name, text;
+	private final String name, email, text;
 	private final LocalDateTime date;
+	private static final Pattern emailPattern = Pattern.compile("^(?=.{1,64}@)[A-Za-z0-9_-]+(\\.[A-Za-z0-9_-]+)*@" + "[^-][A-Za-z0-9-]+(\\.[A-Za-z0-9-]+)*(\\.[A-Za-z]{2,})$");
 
 	/**
 	 * Creates a new {@link GuestbookEntry} for the given name and text.
@@ -43,12 +45,16 @@ class GuestbookEntry {
 	 * @param name must not be {@literal null} or empty
 	 * @param text must not be {@literal null} or empty
 	 */
-	public GuestbookEntry(String name, String text) {
+	public GuestbookEntry(String name, String email, String text) {
 
 		Assert.hasText(name, "Name must not be null or empty!");
+		Assert.hasText(email, "E-Mail must not be null or empty!");
 		Assert.hasText(text, "Text must not be null or empty!");
 
+		if (isInvalidEmail(email)) throw new IllegalArgumentException("Please enter an E-Mail");
+
 		this.name = name;
+		this.email = email;
 		this.text = text;
 		this.date = LocalDateTime.now();
 	}
@@ -56,8 +62,19 @@ class GuestbookEntry {
 	@SuppressWarnings("unused")
 	private GuestbookEntry() {
 		this.name = null;
+		this.email = null;
 		this.text = null;
 		this.date = null;
+	}
+
+	private boolean isInvalidEmail (String emailAddress) {
+		if (!emailPattern.matcher(emailAddress).matches()) return true;
+
+        int count = 0;
+		for (char c : emailAddress.toCharArray())
+			if (c == '@') count++;
+		if (count != 1) return true;
+        return false;
 	}
 
 	public String getName() {
@@ -74,5 +91,9 @@ class GuestbookEntry {
 
 	public String getText() {
 		return text;
+	}
+
+	public String getEmail() {
+		return email;
 	}
 }
